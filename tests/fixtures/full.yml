@@ -1,0 +1,56 @@
+# Every value here differs from the "fresh" API fixtures, so a non-dry-run
+# sync must issue one write per supported key.
+repository:
+  description: "Test repository"
+  homepage: "https://example.com"
+  topics:
+    - alpha
+    - beta
+  private: false
+  delete_branch_on_merge: true
+  allow_squash_merge: true
+  allow_merge_commit: false
+  enable_vulnerability_alerts: true
+  enable_automated_security_fixes: true
+  enable_secret_scanning: true
+  enable_secret_scanning_push_protection: true
+  enable_private_vulnerability_reporting: true
+  # Live fixture has this on, so syncing must DELETE the toggle.
+  enable_immutable_releases: false
+
+repository_extra:
+  allow_auto_merge: true
+
+labels:
+  - name: bug
+    color: B60205
+    description: Something is not working
+  - name: changed
+    color: AAAAAA
+    description: Description differs from live
+  - name: unchanged
+    color: FFFFFF
+    description: Identical to live
+
+actions:
+  default_workflow_permissions: read
+  can_approve_pull_request_reviews: false
+
+rulesets:
+  - name: default branch protection
+    target: branch
+    enforcement: active
+    conditions:
+      ref_name:
+        include: ["~DEFAULT_BRANCH"]
+        exclude: []
+    rules:
+      - type: deletion
+      - type: non_fast_forward
+      - type: pull_request
+        parameters:
+          required_approving_review_count: 0
+          dismiss_stale_reviews_on_push: true
+          require_code_owner_review: false
+          require_last_push_approval: false
+          required_review_thread_resolution: true

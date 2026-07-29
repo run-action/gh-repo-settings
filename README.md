@@ -158,3 +158,28 @@ stored token.
 `yq` (mikefarah/yq), `jq`, and `curl` — all preinstalled on GitHub-hosted
 Ubuntu runners, and bundled by the Nix package. The healthcheck needs only
 `jq` and `curl` (plus optionally `gh` for auth).
+
+## Tests
+
+[bats](https://github.com/bats-core/bats-core) covers the part linting cannot:
+which endpoint each settings key reaches, what payload it carries, and that a
+repository already matching the file issues no write at all.
+
+```console
+$ bats tests/          # or `test` inside `nix develop`
+```
+
+The suite needs no token and touches no network. `tests/stubs/curl` shadows
+`curl` on `PATH`, records every request to a JSONL log, and replays canned
+responses from `tests/fixtures/api/`, so the tests assert on the requests the
+script *would* have sent:
+
+- `fresh/` — a repository where nothing matches the file, so every supported
+  key must produce exactly one write
+- `insync/` — a repository already converged, including rules in a different
+  order and the extra parameters GitHub adds on write, so any write is a bug
+
+To add a case, drop a `METHOD_path_with_underscores.json` fixture in either
+directory (an adjacent `.status` file overrides the HTTP status) and assert
+with the `count_calls` / `body_of` / `write_calls` helpers in
+`tests/helpers/load.bash`.

@@ -1,0 +1,14 @@
+{
+  "description": null,
+  "homepage": null,
+  "topics": [],
+  "private": false,
+  "delete_branch_on_merge": false,
+  "allow_squash_merge": true,
+  "allow_merge_commit": true,
+  "allow_auto_merge": false,
+  "security_and_analysis": {
+    "secret_scanning": { "status": "disabled" },
+    "secret_scanning_push_protection": { "status": "disabled" }
+  }
+}

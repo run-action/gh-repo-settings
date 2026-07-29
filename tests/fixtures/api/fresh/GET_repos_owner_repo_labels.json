@@ -1,0 +1,4 @@
+[
+  { "name": "changed", "color": "123456", "description": "Old description" },
+  { "name": "unchanged", "color": "ffffff", "description": "Identical to live" }
+]

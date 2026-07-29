@@ -67,12 +67,25 @@
             name = "lint";
             runtimeInputs = linters pkgs;
             text = ''
-              shellcheck scripts/*.sh gh-settings
-              shfmt -d scripts/*.sh gh-settings
+              shellcheck scripts/*.sh gh-settings tests/stubs/curl
+              shfmt -d scripts/*.sh gh-settings tests/stubs/curl
               yamllint --strict .
               actionlint
               zizmor .
               echo "All linters passed."
+            '';
+          };
+          # `test` — the bats suite.
+          test = pkgs.writeShellApplication {
+            name = "test";
+            runtimeInputs = with pkgs; [
+              bats
+              yq-go
+              jq
+              git
+            ];
+            text = ''
+              exec bats "''${@:-tests/}"
             '';
           };
         in
@@ -80,12 +93,16 @@
           default = pkgs.mkShell {
             packages =
               linters pkgs
-              ++ [ lint ]
-              # Runtime deps of the scripts themselves.
+              ++ [
+                lint
+                test
+              ]
+              # Runtime deps of the scripts themselves, plus the test runner.
               ++ (with pkgs; [
                 yq-go
                 jq
                 gh
+                bats
               ]);
           };
         }
