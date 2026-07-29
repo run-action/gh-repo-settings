@@ -1,0 +1,29 @@
+# Squash-merges open Dependabot PRs once they've aged past the cooldown and
+# every check is green. Dependabot's own cooldown (see dependabot.yml) delays
+# proposing a release; this delays merging it.
+name: Gated automerge
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, after the weekly dependabot run
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: dependabot-automerge-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  automerge:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # merge the PR
+      pull-requests: write # enable auto-merge, delete the branch
+      checks: read # statusCheckRollup
+      statuses: read # statusCheckRollup
+      actions: read # check runs from workflow runs
+    steps:
+      - uses: run-action/automerge@46cd9d2f9e469f68f91b6c22e2a13f673ccac593 # v1.2.3
+        with:
+          cooldown-days: 3
