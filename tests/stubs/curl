@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# Fake curl for the test suite: records each request as a JSON line in
+# $CURL_LOG and replays a canned response from $CURL_FIXTURES.
+#
+# Fixture lookup is METHOD plus the path, query string dropped and slashes
+# turned into underscores:
+#   GET https://api.github.com/repos/owner/repo/labels?page=1
+#     -> $CURL_FIXTURES/GET_repos_owner_repo_labels.json
+# An adjacent .status file overrides the status (default 200); a missing .json
+# defaults to {}, so status-only endpoints need only the .status.
+set -euo pipefail
+
+method=GET
+body=
+url=
+want_status=false
+fail_with_body=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -X | --request)
+      method="$2"
+      shift 2
+      ;;
+    -d | --data | --data-raw | --data-binary)
+      body="$2"
+      shift 2
+      ;;
+    -w | --write-out)
+      want_status=true
+      shift 2
+      ;;
+    -H | --header) shift 2 ;;
+    --fail-with-body)
+      fail_with_body=true
+      shift
+      ;;
+    -*) shift ;;
+    *)
+      url="$1"
+      shift
+      ;;
+  esac
+done
+
+# Relative to the API base, so a GHES base such as
+# https://ghe.example.com/api/v3 yields the same route as api.github.com.
+base="${GITHUB_API_URL:-https://api.github.com}"
+if [[ "$url" == "$base"/* ]]; then
+  route="${url#"$base"/}"
+else
+  route="${url#*://}"
+  route="${route#*/}"
+fi
+route="${route%%\?*}"
+
+jq -nc \
+  --arg method "$method" \
+  --arg url "$url" \
+  --arg path "$route" \
+  --arg body "$body" \
+  '{method: $method, url: $url, path: $path, body: $body}' >>"$CURL_LOG"
+
+key="${method}_${route//\//_}"
+status=200
+[[ -f "$CURL_FIXTURES/$key.status" ]] && status="$(<"$CURL_FIXTURES/$key.status")"
+response='{}'
+[[ -f "$CURL_FIXTURES/$key.json" ]] && response="$(<"$CURL_FIXTURES/$key.json")"
+[[ "$status" == "204" ]] && response=""
+
+if [[ "$want_status" == true ]]; then
+  printf '%s\n%s' "$response" "$status"
+else
+  printf '%s\n' "$response"
+fi
+
+# Real curl exits 22 after printing the body; api() relies on that.
+if [[ "$fail_with_body" == true && "$status" -ge 400 ]]; then
+  exit 22
+fi
+exit 0

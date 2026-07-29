@@ -1,0 +1,5 @@
+[
+  { "name": "bug", "color": "b60205", "description": "Something is not working" },
+  { "name": "changed", "color": "AAAAAA", "description": "Description differs from live" },
+  { "name": "unchanged", "color": "FFFFFF", "description": "Identical to live" }
+]
